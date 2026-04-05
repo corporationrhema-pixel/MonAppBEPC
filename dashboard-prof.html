@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>📊 Tableau de Bord Prof - Prépa BEPC</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root { --primary: #4f46e5; --bg: #f8fafc; --card: #ffffff; --text: #0f172a; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); padding: 20px; }
+    header { text-align: center; margin-bottom: 2rem; }
+    h1 { color: var(--primary); }
+    
+    .controls { background: var(--card); padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .controls label { font-weight: 600; margin-right: 0.5rem; }
+    .controls select { padding: 0.5rem; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 1rem; }
+    .controls button { padding: 0.5rem 1rem; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; margin-left: 0.5rem; }
+    .controls button:hover { background: #4338ca; }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--card); padding: 1.5rem; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .stat-value { font-size: 2.5rem; font-weight: 800; color: var(--primary); }
+    .stat-label { color: #64748b; font-size: 0.9rem; margin-top: 0.3rem; }
+    
+    .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .chart-card { background: var(--card); padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .chart-card h3 { margin-bottom: 1rem; color: var(--primary); }
+    
+    table { width: 100%; border-collapse: collapse; background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+    th { background: #f1f5f9; font-weight: 600; }
+    tr:hover { background: #f8fafc; }
+    
+    .loading { text-align: center; padding: 3rem; color: #64748b; }
+    .error { background: #fee2e2; color: #dc2626; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    
+    @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>📊 Tableau de Bord Professeur</h1>
+    <p>Prépa BEPC • Suivi en temps réel</p>
+  </header>
+
+  <div class="controls">
+    <label for="classFilter">🎓 Filtrer par classe :</label>
+    <select id="classFilter">
+      <option value="all">Toutes les classes</option>
+      <option value="6e">6e</option>
+      <option value="5e">5e</option>
+      <option value="4e">4e</option>
+      <option value="3e">3e</option>
+    </select>
+    <button onclick="loadData()">🔄 Actualiser</button>
+  </div>
+
+  <div id="stats" class="stats-grid"></div>
+  <div id="charts" class="charts-grid"></div>
+  <div id="table-container"></div>
+
+  <script>
+    // ⚙️ CONFIGURATION : Remplace par l'ID de ton Google Sheet
+    const SHEET_ID = 'https://https://docs.google.com/spreadsheets/d/1Fhc_z2Eq_uyMJz9cI1OcCKkknSdJ3lT6Bhydv28MCbY/edit?gid=0#gid=0'; // ← À REMPLACER
+    const SHEET_NAME = 'Feuille1'; // Nom de ta feuille
+    
+    let allData = [];
+    let charts = {};
+
+    async function loadData() {
+      document.getElementById('stats').innerHTML = '<div class="loading">Chargement des données...</div>';
+      
+      try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+        const response = await fetch(url);
+        const text = await response.text();
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        
+        allData = json.table.rows.map(row => ({
+          date: row.c[0]?.v ? new Date(row.c[0].v).toLocaleDateString('fr-FR') : '-',
+          classe: row.c[1]?.v || 'Non spécifié',
+          code: row.c[2]?.v || 'Inconnu',
+          matiere: row.c[3]?.v || 'Non spécifié',
+          lecons: row.c[4]?.v || 0,
+          moyenne: row.c[5]?.v || 0,
+          badges: row.c[6]?.v || 0
+        })).filter(r => r.code !== 'Inconnu');
+        
+        const filter = document.getElementById('classFilter').value;
+        const filteredData = filter === 'all' ? allData : allData.filter(d => d.classe === filter);
+        
+        renderStats(filteredData);
+        renderCharts(filteredData);
+        renderTable(filteredData);
+        
+      } catch (err) {
+        document.getElementById('stats').innerHTML = `<div class="error">❌ Erreur : ${err.message}<br>Vérifie que ton Sheet est en mode "Lecteur" et que l'ID est correct.</div>`;
+      }
+    }
+
+    function renderStats(data) {
+      const totalEleves = new Set(data.map(d => d.code)).size;
+      const avgMoyenne = data.length ? Math.round(data.reduce((a,b) => a + b.moyenne, 0) / data.length) : 0;
+      const totalLecons = data.reduce((a,b) => a + b.lecons, 0);
+      const totalBadges = data.reduce((a,b) => a + b.badges, 0);
+      
+      document.getElementById('stats').innerHTML = `
+        <div class="stat-card"><div class="stat-value">${totalEleves}</div><div class="stat-label">Élèves actifs</div></div>
+        <div class="stat-card"><div class="stat-value">${avgMoyenne}%</div><div class="stat-label">Moyenne générale</div></div>
+        <div class="stat-card"><div class="stat-value">${totalLecons}</div><div class="stat-label">Leçons validées</div></div>
+        <div class="stat-card"><div class="stat-value">${totalBadges}</div><div class="stat-label">Badges obtenus</div></div>
+      `;
+    }
+
+    function renderCharts(data) {
+      document.getElementById('charts').innerHTML = `
+        <div class="chart-card"><h3>📊 Moyennes par classe</h3><canvas id="chartClasses"></canvas></div>
+        <div class="chart-card"><h3>🎯 Distribution des scores</h3><canvas id="chartScores"></canvas></div>
+        <div class="chart-card"><h3>📚 Leçons par matière</h3><canvas id="chartMatieres"></canvas></div>
+        <div class="chart-card"><h3>🏆 Top 10 élèves</h3><canvas id="chartTop"></canvas></div>
+      `;
+      
+      // Graphique 1 : Moyennes par classe
+      const classesData = {};
+      data.forEach(d => {
+        if (!classesData[d.classe]) classesData[d.classe] = [];
+        classesData[d.classe].push(d.moyenne);
+      });
+      const classLabels = Object.keys(classesData);
+      const classAverages = classLabels.map(c => Math.round(classesData[c].reduce((a,b)=>a+b,0)/classesData[c].length));
+      
+      charts.classes = new Chart(document.getElementById('chartClasses'), {
+        type: 'bar',
+        data: { labels: classLabels, datasets: [{ label: 'Moyenne %', data: classAverages, backgroundColor: '#4f46e5' }] },
+        options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } } }
+      });
+      
+      // Graphique 2 : Distribution des scores
+      const scoreRanges = { '0-49': 0, '50-79': 0, '80-100': 0 };
+      data.forEach(d => {
+        if (d.moyenne < 50) scoreRanges['0-49']++;
+        else if (d.moyenne < 80) scoreRanges['50-79']++;
+        else scoreRanges['80-100']++;
+      });
+      
+      charts.scores = new Chart(document.getElementById('chartScores'), {
+        type: 'doughnut',
+        data: { 
+          labels: ['0-49% (À revoir)', '50-79% (En progrès)', '80-100% (Validé)'],
+          datasets: [{ data: Object.values(scoreRanges), backgroundColor: ['#dc2626', '#f59e0b', '#16a34a'] }]
+        },
+        options: { responsive: true }
+      });
+      
+      // Graphique 3 : Top 10 élèves
+      const eleveScores = {};
+      data.forEach(d => {
+        if (!eleveScores[d.code]) eleveScores[d.code] = { classe: d.classe, total: 0, count: 0 };
+        eleveScores[d.code].total += d.moyenne;
+        eleveScores[d.code].count++;
+      });
+      const topEleves = Object.entries(eleveScores)
+        .map(([code, data]) => ({ code, classe: data.classe, avg: Math.round(data.total/data.count) }))
+        .sort((a,b) => b.avg - a.avg)
+        .slice(0, 10);
+      
+      charts.top = new Chart(document.getElementById('chartTop'), {
+        type: 'bar',
+        data: { 
+          labels: topEleves.map(e => `${e.code} (${e.classe})`),
+          datasets: [{ label: 'Moyenne %', data: topEleves.map(e => e.avg), backgroundColor: '#16a34a' }]
+        },
+        options: { responsive: true, indexAxis: 'y', scales: { x: { beginAtZero: true, max: 100 } } }
+      });
+    }
+
+    function renderTable(data) {
+      const recent = data.slice(-20).reverse();
+      let html = '<table><thead><tr><th>Date</th><th>Classe</th><th>Code</th><th>Moyenne</th><th>Leçons</th><th>Badges</th></tr></thead><tbody>';
+      recent.forEach(d => {
+        const color = d.moyenne >= 80 ? '#16a34a' : d.moyenne >= 50 ? '#f59e0b' : '#dc2626';
+        html += `<tr>
+          <td>${d.date}</td>
+          <td>${d.classe}</td>
+          <td><strong>${d.code}</strong></td>
+          <td style="color:${color}; font-weight:bold;">${d.moyenne}%</td>
+          <td>${d.lecons}</td>
+          <td>${d.badges}</td>
+        </tr>`;
+      });
+      html += '</tbody></table>';
+      document.getElementById('table-container').innerHTML = html;
+    }
+
+    document.getElementById('classFilter').addEventListener('change', loadData);
+    loadData(); // Chargement initial
+  </script>
+</body>
+</html>
