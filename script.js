@@ -624,7 +624,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // 📤 Export vers Google Sheets (avec classe)
-  const GAS_URL = "DISABLED"; // ← Mets ton URL Apps Script ici quand tu veux activer
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbw-bQ7GIVeul_FGX0phFtVwB-Z7oes3vInPn-Aw1xy3LIx89y6GY5UyQacRWwmZUW0B/exec"; // ← Mets ton URL Apps Script ici quand tu veux activer
 
   const btnExportClass = document.getElementById('btn-export-class');
   if (btnExportClass) {
