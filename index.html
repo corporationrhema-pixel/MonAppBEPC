@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prépa BEPC</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#4f46e5">
+</head>
+<body>
+
+  <header>
+    <div class="logo-placeholder">📚</div>
+    <h1>Prépa BEPC</h1>
+    <p>Révise intelligemment • Progresse sereinement</p>
+  </header>
+
+  <main>
+    <!-- ÉCRAN 1 : CLASSES -->
+    <section id="sec-classes" class="step active">
+      <div class="card">
+        <h2>🎒 Choisis ta classe</h2>
+        <div class="grid">
+          <button data-action="select-class" data-value="6e">6e</button>
+          <button data-action="select-class" data-value="5e">5e</button>
+          <button data-action="select-class" data-value="4e">4e</button>
+          <button data-action="select-class" data-value="3e" class="btn-primary">3e • BEPC</button>
+        </div>
+        
+        <!-- Sélecteur de profil -->
+        <div style="margin:1rem 0; padding:0.8rem; background:rgba(255,255,255,0.05); border-radius:8px;">
+          <label style="font-size:0.9rem; color:var(--text-muted);">👤 Ton code élève :</label>
+          <div style="display:flex; gap:0.5rem; margin-top:0.3rem;">
+            <input id="profile-input" type="text" placeholder="Ex: ELV01" style="flex:1; padding:0.5rem; border-radius:6px; border:1px solid var(--border); background:rgba(0,0,0,0.3); color:white;">
+            <button id="btn-save-profile" class="btn-primary" style="padding:0.5rem 1rem;">OK</button>
+          </div>
+          <p id="current-profile-display" style="font-size:0.8rem; color:var(--primary); margin-top:0.3rem;"></p>
+        </div>
+        
+        <!-- Bouton Dashboard -->
+        <button data-action="show-dashboard" class="btn-back" style="width:100%; margin-top:0.5rem;">
+          📊 Mon Tableau de Bord
+        </button>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 2 : MATIÈRES (Corrigé) -->
+    <section id="sec-matieres" class="step">
+      <div class="card">
+        <h2>📚 Sélectionne une matière</h2>
+        <p>Classe sélectionnée : <span id="lbl-class" style="color:#fff; font-weight:bold;">-</span></p>
+        <div class="grid">
+          <button data-action="select-subject" data-value="maths">📐 Mathématiques</button>
+          <button data-action="select-subject" data-value="francais">📖 Français</button>
+          <button data-action="select-subject" data-value="svt">🔬 SVT</button>
+          <button data-action="select-subject" data-value="physique">⚛️ Physique-Chimie</button>
+          <button data-action="select-subject" data-value="histoire">🌍 Histoire-Géo</button>
+          <button data-action="select-subject" data-value="anglais">🇬🇧 Anglais</button>
+          <button data-action="select-subject" data-value="musique">🎵 Musique</button>
+          <button data-action="select-subject" data-value="arts">🎨 Arts Plastiques</button>
+        </div>
+        <button data-action="go-back" data-cible="sec-classes" class="btn-back" style="margin-top:1rem;">← Retour</button>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 3 : COMPÉTENCES -->
+    <section id="sec-competences" class="step">
+      <div class="card">
+        <h2>🎯 Choisis une compétence</h2>
+        <div id="grid-comp" class="grid"></div>
+        <button data-action="go-back" data-cible="sec-matieres" class="btn-back">← Retour</button>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 4 : THÈMES -->
+    <section id="sec-themes" class="step">
+      <div class="card">
+        <h2>📖 Choisis un thème</h2>
+        <div id="grid-theme" class="grid"></div>
+        <button data-action="go-back" data-cible="sec-competences" class="btn-back">← Retour</button>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 5 : LEÇONS -->
+    <section id="sec-lecons" class="step">
+      <div class="card">
+        <h2>📝 Choisis une leçon</h2>
+        <div id="grid-lesson" class="grid"></div>
+        <button data-action="go-back" data-cible="sec-themes" class="btn-back">← Retour</button>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 6 : COURS -->
+    <section id="sec-cours" class="step">
+      <div class="card full">
+        <h2 id="cours-title">Titre de la leçon</h2>
+        <div id="cours-body"></div>
+        <button data-action="start-quiz" class="btn-success" style="width:100%; margin-top:1rem;">🚀 Lancer le Quiz</button>
+        <button data-action="go-back" data-cible="sec-lecons" class="btn-back" style="width:100%; margin-top:0.5rem;">← Retour aux leçons</button>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 7 : QUIZ -->
+    <section id="sec-quiz" class="step">
+      <div class="card">
+        <h2>🧠 Quiz en cours</h2>
+        <p id="q-counter">Question 1/10</p>
+        <div class="progress-bar"><div id="q-progress" class="progress-fill"></div></div>
+        <h3 id="q-text">Question...</h3>
+        <div id="q-options" class="quiz-options"></div>
+        <div id="feedback-box" class="feedback hidden"></div>
+        <button id="btn-next" data-action="next-question" class="btn-primary hidden" style="width:100%; margin-top:1rem;">Question suivante →</button>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 8 : RÉSULTATS -->
+    <section id="sec-result" class="step">
+      <div class="card">
+        <h2>📊 Résultats</h2>
+        <div id="result-content" class="score-display"></div>
+        <div class="grid" style="margin-top:1.5rem;">
+          <button data-action="go-back" data-cible="sec-lecons" class="btn-back">🔙 Autres leçons</button>
+          <button id="btn-retry" data-action="retry-quiz" class="btn-retry hidden">🔄 Retenter</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ÉCRAN 9 : TABLEAU DE BORD ÉLÈVE (STRUCTURE CORRIGÉE) -->
+    <section id="sec-dashboard" class="step">
+      <div class="card full">
+        <div class="dash-header">
+          <h2>📊 Mon Tableau de Bord</h2>
+          <button data-action="go-back" data-cible="sec-classes" class="btn-back">← Accueil</button>
+        </div>
+        
+        <!-- Stats rapides -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-icon">🎓</span>
+            <span class="stat-value" id="dash-total-lessons">0</span>
+            <span class="stat-label">Leçons validées</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">⭐</span>
+            <span class="stat-value" id="dash-avg-score">0%</span>
+            <span class="stat-label">Score moyen</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🏆</span>
+            <span class="stat-value" id="dash-badges">0/5</span>
+            <span class="stat-label">Badges obtenus</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-icon">🔥</span>
+            <span class="stat-value" id="dash-streak">0</span>
+            <span class="stat-label">Jours de suite</span>
+          </div>
+        </div>
+
+        <!-- Boutons d'action (HORS de stats-grid) -->
+        <div style="display:flex; gap:0.5rem; margin-top:1rem; flex-wrap:wrap;">
+          <button id="btn-export-pdf" class="btn-back" style="flex:1; min-width:200px;">🖨️ Exporter mon bilan (PDF)</button>
+          <button id="btn-export-class" class="btn-back" style="flex:1; min-width:200px;">📤 Envoyer au prof (JSON)</button>
+        </div>
+
+        <!-- Zone masquée pour l'impression (HORS de tout) -->
+        <div id="print-area" style="display:none; position:absolute; left:-9999px;">
+          <div style="padding:2rem; font-family:sans-serif; color:#000; background:#fff;">
+            <h1 style="text-align:center; margin-bottom:0.5rem;">📚 Prépa BEPC - Bilan de Progression</h1>
+            <p style="text-align:center; color:#666;">Profil : <span id="print-profile"></span> | Date : <span id="print-date"></span></p>
+            <hr>
+            <div id="print-stats" style="display:flex; justify-content:space-around; margin:1.5rem 0;"></div>
+            <h3>📈 Progression par thème</h3>
+            <div id="print-themes"></div>
+            <hr style="margin-top:2rem;">
+            <p style="font-size:0.8rem; color:#888;">Généré automatiquement par Prépa BEPC • Prof. FOLLYKOE Têko Donald</p>
+          </div>
+        </div>
+
+        <!-- Badges -->
+        <h3 style="margin:1.5rem 0 0.8rem;">🏅 Mes Badges</h3>
+        <div id="dash-badges-grid" class="badges-grid"></div>
+
+        <!-- Historique -->
+        <h3 style="margin:1.5rem 0 0.8rem;">🕒 Historique récent</h3>
+        <div id="dash-history" class="history-list"></div>
+
+        <!-- Progression par thème -->
+        <h3 style="margin:1.5rem 0 0.8rem;">📈 Progression par thème</h3>
+        <div id="dash-themes-progress" class="themes-progress"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © 2026 Prépa BEPC • Prof. FOLLYKOE Têko Donald - Tous Droits Réservés
+  </footer>
+
+  <!-- ✅ Enregistrement du Service Worker (PWA) -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(reg => console.log('✅ SW enregistré'))
+          .catch(err => console.warn('⚠️ SW non enregistré:', err));
+      });
+    }
+  </script>
+
+  <!-- ✅ Ton script principal -->
+  <script src="script.js"></script>
+</body>
+</html>
