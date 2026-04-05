@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const DATA = {
     competencies: [
       // ==========================================
-      // 1. MATHÉMATIQUES (Existant)
+      // 1. MATHÉMATIQUES
       // ==========================================
       {
         id: "c1", name: "🧮 Nombres & Calculs", themes: [
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       // ==========================================
-      // 2. FRANÇAIS (Existant)
+      // 2. FRANÇAIS
       // ==========================================
       {
         id: "c_fr", name: "📖 Français", themes: [
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       // ==========================================
-      // 3. SVT (NOUVEAU)
+      // 3. SVT
       // ==========================================
       {
         id: "c_svt", name: "🔬 SVT", themes: [
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       // ==========================================
-      // 4. PHYSIQUE-CHIMIE (NOUVEAU)
+      // 4. PHYSIQUE-CHIMIE
       // ==========================================
       {
         id: "c_phys", name: "⚛️ Physique-Chimie", themes: [
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       // ==========================================
-      // 5. HISTOIRE-GÉOGRAPHIE (NOUVEAU)
+      // 5. HISTOIRE-GÉOGRAPHIE
       // ==========================================
       {
         id: "c_hist", name: "🌍 Histoire-Géo", themes: [
@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       // ==========================================
-      // 6. ANGLAIS (NOUVEAU)
+      // 6. ANGLAIS
       // ==========================================
       {
         id: "c_ang", name: "🇬🇧 Anglais", themes: [
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       // ==========================================
-      // 7. MUSIQUE (NOUVEAU)
+      // 7. MUSIQUE
       // ==========================================
       {
         id: "c_mus", name: "🎵 Musique", themes: [
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
 
       // ==========================================
-      // 8. ARTS PLASTIQUES (NOUVEAU)
+      // 8. ARTS PLASTIQUES
       // ==========================================
       {
         id: "c_art", name: "🎨 Arts Plastiques", themes: [
@@ -247,20 +247,19 @@ document.addEventListener('DOMContentLoaded', () => {
           ]}
         ]
       }
-    ] // ← Fin du tableau competencies
-  }; // ← Fin de l'objet DATA
+    ]
+  };
 
   // 🧠 ÉTAT DE L'APPLICATION
   let state = {
     currentClass: null, currentCompId: null, currentThemeId: null, currentLesson: null, currentSubject: null,
     quiz: { questions: [], currentQ: 0, score: 0 },
     progress: {},
-    // 🎮 Gamification
     timer: null, timeLeft: 30, combo: 0, maxCombo: 0,
     currentProfile: 'INVITÉ'
   };
 
-  // 🔊 Audio Context (sons)
+  // 🔊 Audio Context
   let audioCtx = null;
   function initAudio() {
     if (!audioCtx) {
@@ -278,26 +277,41 @@ document.addEventListener('DOMContentLoaded', () => {
     osc.start(); osc.stop(audioCtx.currentTime + 0.15);
   }
 
-  // 👤 Gestion des profils
+  // 👤 Gestion des profils AVEC DÉTECTION DE CLASSE
   function initProfile() {
     const input = document.getElementById('profile-input');
     const btn = document.getElementById('btn-save-profile');
     const display = document.getElementById('current-profile-display');
     if (!input || !btn || !display) return;
 
+    // Récupère la classe sauvegardée ou détecte par défaut
+    state.currentClass = localStorage.getItem('bepc_class') || '6e';
     state.currentProfile = localStorage.getItem('bepc_profile') || 'INVITÉ';
+
     input.value = state.currentProfile === 'INVITÉ' ? '' : state.currentProfile;
-    display.textContent = `Connecté : ${state.currentProfile}`;
+    display.textContent = `Connecté : ${state.currentProfile} (${state.currentClass.toUpperCase()})`;
     state.progress = JSON.parse(localStorage.getItem(`bepc_progress_${state.currentProfile}`) || '{}');
 
     btn.addEventListener('click', () => {
       const code = input.value.trim().toUpperCase();
       if (!code) return;
+
+      // 🔍 Détection automatique de la classe depuis le code
+      let newClass = 'Autre';
+      if (code.startsWith('6E')) newClass = '6e';
+      else if (code.startsWith('5E')) newClass = '5e';
+      else if (code.startsWith('4E')) newClass = '4e';
+      else if (code.startsWith('3E')) newClass = '3e';
+      else if (state.currentClass) newClass = state.currentClass;
+
       state.currentProfile = code;
+      state.currentClass = newClass;
       localStorage.setItem('bepc_profile', code);
-      display.textContent = `Connecté : ${code}`;
+      localStorage.setItem('bepc_class', newClass);
+      
+      display.textContent = `Connecté : ${code} (${newClass.toUpperCase()})`;
       state.progress = JSON.parse(localStorage.getItem(`bepc_progress_${code}`) || '{}');
-      alert(`✅ Profil ${code} activé !`);
+      alert(`✅ Profil ${code} activé (Classe : ${newClass.toUpperCase()})`);
     });
   }
 
@@ -343,43 +357,24 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'select-class':
         state.currentClass = val;
         document.getElementById('lbl-class').textContent = val;
+        localStorage.setItem('bepc_class', val); // Sauvegarde la classe choisie
         showScreen('sec-matieres');
         break;
         
       case 'select-subject':
         state.currentSubject = val;
         let competenciesToLoad = [];
-        
-        // Sélectionne la matière correspondante dans DATA
         switch(val) {
-          case 'maths':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c1');
-            break;
-          case 'francais':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_fr');
-            break;
-          case 'svt':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_svt');
-            break;
-          case 'physique':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_phys');
-            break;
-          case 'histoire':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_hist');
-            break;
-          case 'anglais':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_ang');
-            break;
-          case 'musique':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_mus');
-            break;
-          case 'arts':
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_art');
-            break;
-          default:
-            competenciesToLoad = DATA.competencies.filter(c => c.id === 'c1');
+          case 'maths': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c1'); break;
+          case 'francais': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_fr'); break;
+          case 'svt': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_svt'); break;
+          case 'physique': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_phys'); break;
+          case 'histoire': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_hist'); break;
+          case 'anglais': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_ang'); break;
+          case 'musique': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_mus'); break;
+          case 'arts': competenciesToLoad = DATA.competencies.filter(c => c.id === 'c_art'); break;
+          default: competenciesToLoad = DATA.competencies.filter(c => c.id === 'c1');
         }
-        
         renderGrid('grid-comp', competenciesToLoad, 'select-comp', 'id');
         showScreen('sec-competences');
         break;
@@ -611,11 +606,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
-  // 🖨️ Export PDF (depuis le dashboard)
+  // 🖨️ Export PDF
   const btnExport = document.getElementById('btn-export-pdf');
   if (btnExport) {
     btnExport.addEventListener('click', () => {
-      document.getElementById('print-profile').textContent = state.currentProfile;
+      document.getElementById('print-profile').textContent = `${state.currentProfile} (${state.currentClass?.toUpperCase()})`;
       document.getElementById('print-date').textContent = new Date().toLocaleDateString('fr-FR');
       document.getElementById('print-stats').innerHTML = `
         <div><strong>${document.getElementById('dash-total-lessons').textContent}</strong><br>Leçons</div>
@@ -628,8 +623,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 📤 Export vers Google Sheets (DÉSACTIVÉ pour l'instant)
-  const GAS_URL = "DISABLED";
+  // 📤 Export vers Google Sheets (avec classe)
+  const GAS_URL = "DISABLED"; // ← Mets ton URL Apps Script ici quand tu veux activer
 
   const btnExportClass = document.getElementById('btn-export-class');
   if (btnExportClass) {
@@ -641,6 +636,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const exportData = {
         profile: state.currentProfile,
+        class: state.currentClass, // ← AJOUTÉ : la classe est maintenant incluse
         date: new Date().toISOString(),
         progress: state.progress,
         summary: {
@@ -681,7 +677,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `BEPC_${data.profile}_${new Date().toISOString().slice(0,10)}.json`;
+    a.download = `BEPC_${data.class?.toUpperCase()}_${data.profile}_${new Date().toISOString().slice(0,10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
