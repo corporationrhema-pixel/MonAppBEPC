@@ -4,9 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prépa BEPC</title>
+  
+  <!-- 🎨 CSS -->
   <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
+  
+  <!-- 🖼️ Icônes PWA & Navigateur -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#4f46e5">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 </head>
 <body>
 
@@ -45,7 +52,7 @@
       </div>
     </section>
 
-    <!-- ÉCRAN 2 : MATIÈRES (Corrigé) -->
+    <!-- ÉCRAN 2 : MATIÈRES -->
     <section id="sec-matieres" class="step">
       <div class="card">
         <h2>📚 Sélectionne une matière</h2>
@@ -126,7 +133,7 @@
       </div>
     </section>
 
-    <!-- ÉCRAN 9 : TABLEAU DE BORD ÉLÈVE (STRUCTURE CORRIGÉE) -->
+    <!-- ÉCRAN 9 : TABLEAU DE BORD ÉLÈVE -->
     <section id="sec-dashboard" class="step">
       <div class="card full">
         <div class="dash-header">
@@ -158,13 +165,13 @@
           </div>
         </div>
 
-        <!-- Boutons d'action (HORS de stats-grid) -->
+        <!-- Boutons d'action -->
         <div style="display:flex; gap:0.5rem; margin-top:1rem; flex-wrap:wrap;">
           <button id="btn-export-pdf" class="btn-back" style="flex:1; min-width:200px;">🖨️ Exporter mon bilan (PDF)</button>
           <button id="btn-export-class" class="btn-back" style="flex:1; min-width:200px;">📤 Envoyer au prof (JSON)</button>
         </div>
 
-        <!-- Zone masquée pour l'impression (HORS de tout) -->
+        <!-- Zone masquée pour l'impression -->
         <div id="print-area" style="display:none; position:absolute; left:-9999px;">
           <div style="padding:2rem; font-family:sans-serif; color:#000; background:#fff;">
             <h1 style="text-align:center; margin-bottom:0.5rem;">📚 Prépa BEPC - Bilan de Progression</h1>
@@ -210,5 +217,86 @@
 
   <!-- ✅ Ton script principal -->
   <script src="script.js"></script>
+
+  <!-- 📊 Script de calcul des stats professeur (depuis Google Sheets) -->
+  <script>
+    (function() {
+      const SHEET_ID = '1Fhc_z2Eq_uyMJz9cI1OcCKkknSdJ3lT6Bhydv28MCbY';
+      const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=0`;
+      
+      function parseCSV(text) {
+        const lines = text.trim().split('\n').slice(1);
+        return lines.map(line => {
+          const values = [];
+          let buf = '', inQuotes = false;
+          for (let char of line) {
+            if (char === '"') inQuotes = !inQuotes;
+            else if (char === ',' && !inQuotes) { values.push(buf.trim().replace(/^"|"$/g, '')); buf = ''; }
+            else buf += char;
+          }
+          values.push(buf.trim().replace(/^"|"$/g, ''));
+          return { code: values[2], lecons: parseInt(values[4]) || 0, moyenne: parseInt(values[5]) || 0, badges: parseInt(values[6]) || 0 };
+        }).filter(r => r.code && r.code !== 'Code Élève');
+      }
+
+      async function loadProfStats() {
+        // Cible les éléments où afficher les stats (ajoute ces IDs dans ton HTML si tu veux les voir)
+        const els = {
+          eleves: document.getElementById('stat-eleves'),
+          moy: document.getElementById('stat-moy'),
+          lecons: document.getElementById('stat-lecons'),
+          badges: document.getElementById('stat-badges')
+        };
+        
+        // Sécurité : si aucun élément cible n'existe, on arrête pour ne pas polluer la console
+        if (!Object.values(els).some(el => el !== null)) return;
+
+        Object.values(els).forEach(el => { if(el) el.textContent = '…'; });
+        
+        try {
+          const response = await fetch(CSV_URL, { cache: 'no-store' });
+          if (!response.ok) throw new Error('HTTP ' + response.status);
+          const text = await response.text();
+          const data = parseCSV(text);
+          
+          if (data.length === 0) {
+            Object.values(els).forEach(el => { if(el) el.textContent = '0'; });
+            return;
+          }
+          
+          const eleves = new Set(data.map(d => d.code)).size;
+          const scores = data.map(d => d.moyenne).filter(s => s > 0);
+          const moy = scores.length ? Math.round(scores.reduce((a,b) => a + b) / scores.length) : 0;
+          const totalLecons = data.reduce((a, d) => a + d.lecons, 0);
+          const totalBadges = data.reduce((a, d) => a + d.badges, 0);
+          
+          if(els.eleves) els.eleves.textContent = eleves;
+          if(els.moy) els.moy.textContent = moy + '%';
+          if(els.lecons) els.lecons.textContent = totalLecons;
+          if(els.badges) els.badges.textContent = totalBadges;
+        } catch (err) {
+          console.log('📊 Stats prof non chargées (CORS ou Sheet non publié)');
+        }
+      }
+
+      // Chargement différé pour ne pas bloquer l'interface élève
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadProfStats);
+      } else {
+        loadProfStats();
+      }
+      // Actualisation auto toutes les 90s
+      setInterval(loadProfStats, 90000);
+    })();
+  </script>
+
+  <!-- 💡 Pour afficher les stats, ajoute ce bloc HTML n'importe où dans ta page :
+  <div style="display:flex; gap:1rem; padding:1rem; background:#f8fafc; border-radius:8px; margin:1rem;">
+    <div><strong id="stat-eleves">0</strong> Élèves</div>
+    <div><strong id="stat-moy">0%</strong> Moyenne</div>
+    <div><strong id="stat-lecons">0</strong> Leçons</div>
+    <div><strong id="stat-badges">0</strong> Badges</div>
+  </div> 
+  -->
 </body>
 </html>
