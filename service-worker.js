@@ -1,6 +1,6 @@
 // ✅ service-worker.js - Version avec cache busting
 // APRÈS (incrémente le numéro) :
-const CACHE_NAME = 'bepc-v4';  // ← Change à chaque déploiement !
+const CACHE_NAME = 'bepc-v5';  // ← Change à chaque déploiement !
 const ASSETS = [
   '/',
   '/index.html',
