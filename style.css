@@ -1,0 +1,347 @@
+/* =========================================
+   VARIABLES & RESET
+   ========================================= */
+:root {
+  --primary: #818cf8;       /* Indigo clair */
+  --primary-dark: #4f46e5;  /* Indigo foncé */
+  --success: #22c55e;       /* Vert */
+  --error: #ef4444;         /* Rouge */
+  --warning: #f59e0b;       /* Orange */
+  
+  --bg-card: rgba(15, 23, 42, 0.85); /* Fond carte sombre semi-transparent */
+  --bg-input: rgba(30, 41, 59, 0.6);
+  
+  --text-main: #f8fafc;     /* Blanc */
+  --text-muted: #94a3b8;    /* Gris clair */
+  
+  --border: rgba(255, 255, 255, 0.1);
+  --radius: 12px;
+  --shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* =========================================
+   BODY & IMAGE DE FOND (LE FIX)
+   ========================================= */
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  /* ✅ TON IMAGE DE FOND */
+  background-image: url('images/bg.jpg');
+  background-size: cover;           /* L'image couvre tout */
+  background-position: center;      /* Centrée */
+  background-repeat: no-repeat;     /* Pas de répétition */
+  background-attachment: fixed;     /* L'image reste fixe quand on scroll */
+  background-color: #0f172a;        /* Couleur de secours si l'image ne charge pas */
+}
+
+/* ✅ OVERLAY SOMBRE (Pour rendre le texte lisible sur l'image) */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(15, 23, 42, 0.75); /* Noir bleuté à 75% d'opacité */
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* =========================================
+   HEADER
+   ========================================= */
+header {
+  text-align: center;
+  padding: 2rem 1rem;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+}
+.logo {
+  width: 80px; height: 80px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 50%;
+  margin: 0 auto 1rem;
+  display: block;
+  object-fit: cover;
+}
+header h1 { font-size: 2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem; }
+header p { color: var(--text-muted); font-size: 1rem; }
+
+/* =========================================
+   MAIN & LAYOUT
+   ========================================= */
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 0 1rem 3rem;
+}
+
+/* Sections (Écrans) */
+.step {
+  display: none; /* Caché par défaut */
+  animation: slideUp 0.4s ease-out;
+}
+.step.active { display: block; } /* Affiché si classe active */
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   COMPOSANTS (Cartes & Boutons)
+   ========================================= */
+.card {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px); /* Effet verre flouté */
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow);
+}
+
+h2 { font-size: 1.4rem; margin-bottom: 1rem; color: #fff; }
+p { margin-bottom: 1rem; color: var(--text-muted); }
+
+/* Grille de boutons */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.8rem;
+  margin: 1rem 0;
+}
+
+button {
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-input);
+  color: var(--text-main);
+}
+
+button:hover:not(:disabled) {
+  background: var(--primary-dark);
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Styles spécifiques de boutons */
+.btn-primary { background: var(--primary); color: white; border: none; }
+.btn-success { background: var(--success); color: white; border: none; }
+.btn-back { background: transparent; border: 1px solid var(--border); color: var(--text-muted); }
+.btn-retry { background: var(--warning); color: #000; border: none; }
+
+/* =========================================
+   CONTENU DU COURS
+   ========================================= */
+.cours-box {
+  background: rgba(0,0,0,0.3);
+  padding: 1rem;
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+  margin-bottom: 1rem;
+}
+.cours-box h3 { color: var(--primary); margin: 0.5rem 0; font-size: 1.1rem; }
+.cours-box ul { padding-left: 1.2rem; margin-bottom: 0.5rem; }
+
+/* =========================================
+   QUIZ & RÉSULTATS
+   ========================================= */
+.progress-bar {
+  background: rgba(255,255,255,0.1);
+  height: 8px;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--primary);
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.quiz-options { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+.quiz-btn { text-align: left; padding: 0.8rem 1rem; }
+
+.quiz-btn.correct { background: rgba(34, 197, 94, 0.2); border-color: var(--success); color: #4ade80; }
+.quiz-btn.incorrect { background: rgba(239, 68, 68, 0.2); border-color: var(--error); color: #f87171; }
+
+.feedback {
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: bold;
+  margin-top: 1rem;
+}
+.fb-ok { background: rgba(34, 197, 94, 0.1); color: #4ade80; border: 1px solid var(--success); }
+.fb-ko { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid var(--error); }
+
+.score-display {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+/* =========================================
+   UTILITAIRES
+   ========================================= */
+.hidden { display: none !important; }
+footer { text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.8rem; }
+
+/* ===== TABLEAU DE BORD ===== */
+.dash-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  background: rgba(30,41,59,0.6);
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  border: 1px solid var(--border);
+}
+.stat-icon { font-size: 1.5rem; display: block; margin-bottom: 0.3rem; }
+.stat-value { 
+  display: block; 
+  font-size: 1.8rem; 
+  font-weight: 800; 
+  color: var(--primary); 
+  line-height: 1;
+}
+.stat-label { 
+  font-size: 0.75rem; 
+  color: var(--text-muted); 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px;
+}
+
+/* Badges Grid */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 0.8rem;
+}
+.badge-card {
+  background: rgba(30,41,59,0.6);
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  border: 2px solid var(--border);
+  transition: 0.2s;
+}
+.badge-card.unlocked {
+  border-color: var(--warning);
+  background: rgba(245,158,11,0.1);
+}
+.badge-card .badge-icon { font-size: 2rem; display: block; margin-bottom: 0.3rem; }
+.badge-card .badge-name { font-size: 0.85rem; font-weight: 600; display: block; }
+.badge-card .badge-desc { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; }
+.badge-card.locked { opacity: 0.5; filter: grayscale(1); }
+
+/* Historique */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem;
+  background: rgba(30,41,59,0.4);
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+.history-item .h-title { font-weight: 600; color: var(--text); }
+.history-item .h-score { 
+  background: var(--primary); 
+  padding: 2px 8px; 
+  border-radius: 12px; 
+  font-size: 0.8rem; 
+  font-weight: bold;
+}
+.history-item .h-date { color: var(--text-muted); font-size: 0.8rem; }
+
+/* Progression thèmes */
+.themes-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.theme-progress-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.theme-progress-item .tp-name { 
+  min-width: 120px; 
+  font-size: 0.9rem; 
+  font-weight: 500;
+}
+.theme-progress-item .tp-bar { 
+  flex: 1; 
+  height: 8px; 
+  background: rgba(255,255,255,0.1); 
+  border-radius: 4px; 
+  overflow: hidden;
+}
+.theme-progress-item .tp-fill { 
+  height: 100%; 
+  background: var(--success); 
+  border-radius: 4px; 
+  transition: width 0.3s ease;
+}
+.theme-progress-item .tp-percent { 
+  min-width: 40px; 
+  text-align: right; 
+  font-size: 0.85rem; 
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .dash-header { flex-direction: column; align-items: flex-start; }
+}
+
+/* ... tout ton CSS existant est ici ... */
+
+/* =========================================
+   EXPORT PDF / IMPRESSION
+   ========================================= */
+@media print {
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area { position: absolute; left: 0; top: 0; width: 100%; background: white; }
+  header, footer, main > :not(#print-area) { display: none; }
+}
