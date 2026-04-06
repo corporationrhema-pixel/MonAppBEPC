@@ -284,19 +284,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const display = document.getElementById('current-profile-display');
     if (!input || !btn || !display) return;
 
-    // Récupère la classe sauvegardée ou détecte par défaut
     state.currentClass = localStorage.getItem('bepc_class') || '6e';
     state.currentProfile = localStorage.getItem('bepc_profile') || 'INVITÉ';
 
     input.value = state.currentProfile === 'INVITÉ' ? '' : state.currentProfile;
-    display.textContent = `Connecté : ${state.currentProfile} (${state.currentClass.toUpperCase()})`;
+    display.textContent = `Connecté : ${state.currentProfile} (${state.currentClass?.toUpperCase()})`;
     state.progress = JSON.parse(localStorage.getItem(`bepc_progress_${state.currentProfile}`) || '{}');
 
     btn.addEventListener('click', () => {
       const code = input.value.trim().toUpperCase();
       if (!code) return;
 
-      // 🔍 Détection automatique de la classe depuis le code
       let newClass = 'Autre';
       if (code.startsWith('6E')) newClass = '6e';
       else if (code.startsWith('5E')) newClass = '5e';
@@ -357,7 +355,7 @@ document.addEventListener('DOMContentLoaded', () => {
       case 'select-class':
         state.currentClass = val;
         document.getElementById('lbl-class').textContent = val;
-        localStorage.setItem('bepc_class', val); // Sauvegarde la classe choisie
+        localStorage.setItem('bepc_class', val);
         showScreen('sec-matieres');
         break;
         
@@ -606,25 +604,91 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
-  // 🖨️ Export PDF
+  // 🖨️ Export PDF (VERSION FIABLE - html2pdf.js)
   const btnExport = document.getElementById('btn-export-pdf');
   if (btnExport) {
-    btnExport.addEventListener('click', () => {
-      document.getElementById('print-profile').textContent = `${state.currentProfile} (${state.currentClass?.toUpperCase()})`;
-      document.getElementById('print-date').textContent = new Date().toLocaleDateString('fr-FR');
-      document.getElementById('print-stats').innerHTML = `
-        <div><strong>${document.getElementById('dash-total-lessons').textContent}</strong><br>Leçons</div>
-        <div><strong>${document.getElementById('dash-avg-score').textContent}</strong><br>Score moy.</div>
-        <div><strong>${document.getElementById('dash-badges').textContent}</strong><br>Badges</div>`;
-      document.getElementById('print-themes').innerHTML = document.getElementById('dash-themes-progress').innerHTML;
-      const area = document.getElementById('print-area');
-      area.style.display = 'block';
-      setTimeout(() => { window.print(); area.style.display = 'none'; }, 100);
+    btnExport.addEventListener('click', async function() {
+      const btn = this;
+      const originalText = btn.textContent;
+      btn.textContent = "⏳ Génération du PDF...";
+      btn.disabled = true;
+
+      try {
+        // Préparer le contenu à exporter
+        document.getElementById('print-profile').textContent = `${state.currentProfile} (${state.currentClass?.toUpperCase()})`;
+        document.getElementById('print-date').textContent = new Date().toLocaleDateString('fr-FR');
+        document.getElementById('print-stats').innerHTML = `
+          <div><strong>${document.getElementById('dash-total-lessons').textContent}</strong><br>Leçons</div>
+          <div><strong>${document.getElementById('dash-avg-score').textContent}</strong><br>Score moy.</div>
+          <div><strong>${document.getElementById('dash-badges').textContent}</strong><br>Badges</div>`;
+        document.getElementById('print-themes').innerHTML = document.getElementById('dash-themes-progress').innerHTML;
+
+        const element = document.getElementById('print-area');
+        const originalStyle = {
+          display: element.style.display,
+          position: element.style.position,
+          left: element.style.left,
+          background: element.style.background,
+          padding: element.style.padding,
+          width: element.style.width,
+          maxWidth: element.style.maxWidth
+        };
+
+        // Afficher la zone d'impression avec styles adaptés
+        element.style.display = 'block';
+        element.style.position = 'relative';
+        element.style.left = '0';
+        element.style.background = '#ffffff';
+        element.style.padding = '20px';
+        element.style.width = '100%';
+        element.style.maxWidth = '210mm'; // Format A4
+
+        // Charger html2pdf.js dynamiquement si absent
+        if (typeof html2pdf === 'undefined') {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+            script.onload = resolve;
+            script.onerror = () => reject(new Error('Impossible de charger html2pdf.js'));
+            document.head.appendChild(script);
+          });
+        }
+
+        // Générer et télécharger le PDF
+        const opt = {
+          margin: 0.4,
+          filename: `Bilan_BEPC_${state.currentProfile}_${new Date().toISOString().slice(0,10)}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, logging: false },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        await html2pdf().set(opt).from(element).save();
+        
+      } catch (err) {
+        console.warn("⚠️ html2pdf échoué, fallback sur window.print():", err);
+        // Fallback natif si la librairie ne charge pas
+        alert("ℹ️ Mode compatibilité : la boîte d'impression va s'ouvrir. Sélectionne 'Enregistrer au format PDF'.");
+        window.print();
+      } finally {
+        // Remasquer la zone d'impression et restaurer les styles
+        const area = document.getElementById('print-area');
+        area.style.display = originalStyle.display || 'none';
+        area.style.position = originalStyle.position || 'absolute';
+        area.style.left = originalStyle.left || '-9999px';
+        area.style.background = originalStyle.background || '';
+        area.style.padding = originalStyle.padding || '';
+        area.style.width = originalStyle.width || '';
+        area.style.maxWidth = originalStyle.maxWidth || '';
+        
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
     });
   }
 
   // 📤 Export vers Google Sheets (avec classe)
-  const GAS_URL = "https://script.google.com/macros/s/AKfycbw-bQ7GIVeul_FGX0phFtVwB-Z7oes3vInPn-Aw1xy3LIx89y6GY5UyQacRWwmZUW0B/exec"; // ← Mets ton URL Apps Script ici quand tu veux activer
+  const GAS_URL = "https://script.google.com/macros/s/AKfycbw-bQ7GIVeul_FGX0phFtVwB-Z7oes3vInPn-Aw1xy3LIx89y6GY5UyQacRWwmZUW0B/exec";
 
   const btnExportClass = document.getElementById('btn-export-class');
   if (btnExportClass) {
@@ -636,7 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const exportData = {
         profile: state.currentProfile,
-        class: state.currentClass, // ← AJOUTÉ : la classe est maintenant incluse
+        class: state.currentClass,
         date: new Date().toISOString(),
         progress: state.progress,
         summary: {
